@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel | Watch Upload</title>
+    <script type="module">
+        // Import Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+
+        // PASTE YOUR FIREBASE CONFIG HERE
+        const firebaseConfig = {
+            apiKey: "...",
+            authDomain: "...",
+            projectId: "...",
+            storageBucket: "...",
+            messagingSenderId: "...",
+            appId: "..."
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        window.uploadWatch = async () => {
+            const file = document.getElementById('watchImage').files[0];
+            const name = document.getElementById('name').value;
+            const price = document.getElementById('price').value;
+
+            // 1. Upload Image to Storage
+            const storageRef = ref(storage, 'watches/' + file.name);
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
+
+            // 2. Save Data to Firestore
+            await addDoc(collection(db, "products"), {
+                name: name,
+                price: price,
+                imageUrl: url,
+                timestamp: new Date()
+            });
+
+            alert("Watch Published to Live Site!");
+        };
+    </script>
+</head>
+<body>
+    <h2>Merchant Portal</h2>
+    <input type="text" id="name" placeholder="Watch Name">
+    <input type="text" id="price" placeholder="Price">
+    <input type="file" id="watchImage">
+    <button onclick="uploadWatch()">Upload to Store</button>
+</body>
+</html>
