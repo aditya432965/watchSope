@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Upload</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; background: #f4f7f6; font-family: 'Inter', sans-serif; }
+        nav { background: #fff; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
+        .container { max-width: 600px; margin: 40px auto; padding: 20px; }
+        .upload-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; color: #333; }
+        label { display: block; margin-top: 15px; font-weight: 600; font-size: 0.9rem; color: #555; }
+        input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .submit-btn { width: 100%; padding: 15px; background: #d4af37; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 25px; transition: 0.3s; }
+        .submit-btn:hover { background: #b8962d; }
+        .logout-btn { background: none; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div style="font-weight: 800;">LUXE DASHBOARD</div>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+    </nav>
+
+    <div class="container">
+        <div class="upload-card">
+            <h2>Add New Watch</h2>
+            <p style="color: #888; font-size: 0.85rem;">The watch will appear instantly on the viewer's site.</p>
+            
+            <label>Model Name</label>
+            <input type="text" id="watchName" placeholder="e.g. Omega Seamaster">
+            
+            <label>Retail Price ($)</label>
+            <input type="number" id="watchPrice" placeholder="5000">
+            
+            <label>Watch Image</label>
+            <input type="file" id="watchImg" accept="image/*">
+            
+            <button class="submit-btn" id="uploadBtn">Publish to Shop</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+
+        const firebaseConfig = { /* SAME CONFIG AS INDEX.HTML */ };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // Security Check: If not logged in, kick back to login page
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = "index.html";
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            signOut(auth).then(() => window.location.href = "index.html");
+        });
+
+        document.getElementById('uploadBtn').addEventListener('click', async () => {
+            const name = document.getElementById('watchName').value;
+            const price = document.getElementById('watchPrice').value;
+            const file = document.getElementById('watchImg').files[0];
+            const btn = document.getElementById('uploadBtn');
+
+            if(!name || !price || !file) return alert("Please complete all fields.");
+
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            try {
+                // 1. Upload to Storage
+                const storageRef = ref(storage, `watches/${Date.now()}_${file.name}`);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
+
+                // 2. Save to Firestore
+                await addDoc(collection(db, "products"), {
+                    name, price, imageUrl: url, createdAt: new Date()
+                });
+
+                alert("Success! The watch is now live.");
+                location.reload();
+            } catch (e) {
+                alert("Error: " + e.message);
+                btn.disabled = false;
+                btn.innerText = "Publish to Shop";
+            }
+        });
+    </script>
+</body>
+</html>
