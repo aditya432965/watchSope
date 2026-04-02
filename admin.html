@@ -15,7 +15,6 @@
             --nav-bg: #1a1a1a;
         }
 
-        /* Dark Mode Variables */
         [data-theme="dark"] {
             --dark: #f8f9fa;
             --gray: #121212;
@@ -89,7 +88,6 @@
         
         .btn-main { width: 100%; padding: 15px; background: var(--gold); color: black; border: none; border-radius: 8px; font-weight: 600; margin-top: 20px; cursor: pointer; }
 
-        /* View All Layout */
         .view-row { display: flex; align-items: center; background: var(--card-bg); margin-bottom: 15px; border-radius: 12px; overflow: hidden; border: 1px solid #44444433; padding: 10px; }
         .view-row img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; margin-right: 20px; }
         .view-details { flex: 1; }
@@ -97,7 +95,6 @@
         .view-details p { font-size: 0.8rem; opacity: 0.7; margin: 5px 0; }
         .view-price { color: var(--gold); font-weight: 800; }
 
-        /* Orders Styles */
         .order-item { padding: 15px; border-bottom: 1px solid #ddd; cursor: pointer; }
         .order-details-box { display: none; background: #88888811; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px dashed var(--gold); }
     </style>
@@ -125,10 +122,10 @@
     <div id="info" class="section active">
         <div class="card">
             <h2>Business Identity</h2>
-            <label>Shop Name</label><input type="text" id="shopName">
-            <label>Address</label><textarea id="shopAddress"></textarea>
-            <label>Contact Number</label><input type="tel" id="shopContact">
-            <button class="btn-main" onclick="saveShopInfo()">Update Details</button>
+            <label>Shop Name</label><input type="text" id="shopName" placeholder="Enter Shop Name">
+            <label>Address</label><textarea id="shopAddress" placeholder="Enter Full Address"></textarea>
+            <label>Contact Number</label><input type="tel" id="shopContact" placeholder="Phone Number">
+            <button class="btn-main" id="saveShopBtn" onclick="saveShopInfo()">Update Details</button>
         </div>
     </div>
 
@@ -180,7 +177,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, addDoc, updateDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
     const firebaseConfig = { 
@@ -197,6 +194,20 @@
     const db = getFirestore(app);
     const storage = getStorage(app);
 
+    // 1. LOAD SHOP INFO ON PAGE LOAD
+    async function loadCurrentShopInfo() {
+        const docRef = doc(db, "settings", "shopInfo");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            document.getElementById('shopName').value = data.name || "";
+            document.getElementById('shopAddress').value = data.address || "";
+            document.getElementById('shopContact').value = data.contact || "";
+        }
+    }
+    loadCurrentShopInfo();
+
     // Theme Toggle
     window.toggleTheme = () => {
         const body = document.body;
@@ -206,7 +217,6 @@
         localStorage.setItem('admin-theme', next);
     };
 
-    // Load saved theme
     if(localStorage.getItem('admin-theme')) {
         document.body.setAttribute('data-theme', localStorage.getItem('admin-theme'));
     }
@@ -221,14 +231,21 @@
     onAuthStateChanged(auth, (u) => { if(!u) window.location.href="index.html" });
     window.logout = () => signOut(auth);
 
-    // Save Shop Info
+    // 2. SAVE SHOP INFO TO FIREBASE
     window.saveShopInfo = async () => {
-        await setDoc(doc(db, "settings", "shopInfo"), {
-            name: document.getElementById('shopName').value,
-            address: document.getElementById('shopAddress').value,
-            contact: document.getElementById('shopContact').value
-        });
-        alert("Shop Identity Updated!");
+        const btn = document.getElementById('saveShopBtn');
+        btn.innerText = "Saving...";
+        try {
+            await setDoc(doc(db, "settings", "shopInfo"), {
+                name: document.getElementById('shopName').value,
+                address: document.getElementById('shopAddress').value,
+                contact: document.getElementById('shopContact').value
+            });
+            alert("Shop Identity Updated in Cloud!");
+        } catch (e) {
+            alert("Error saving: " + e.message);
+        }
+        btn.innerText = "Update Details";
     };
 
     // Add Item
@@ -311,7 +328,6 @@
         `).join('');
     }
 
-    // Orders Listener
     onSnapshot(collection(db, "orders"), (snap) => {
         const list = document.getElementById('orderList');
         list.innerHTML = "";
