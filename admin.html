@@ -3,102 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | Upload</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <title>Luxe Admin | Control Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; background: #f4f7f6; font-family: 'Inter', sans-serif; }
-        nav { background: #fff; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
-        .container { max-width: 600px; margin: 40px auto; padding: 20px; }
-        .upload-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        h2 { margin-top: 0; color: #333; }
-        label { display: block; margin-top: 15px; font-weight: 600; font-size: 0.9rem; color: #555; }
-        input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .submit-btn { width: 100%; padding: 15px; background: #d4af37; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 25px; transition: 0.3s; }
-        .submit-btn:hover { background: #b8962d; }
-        .logout-btn { background: none; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        :root { --gold: #d4af37; --dark: #1a1a1a; --gray: #f8f9fa; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--gray); color: var(--dark); }
+        
+        /* Navigation Sidebar/Top */
+        nav { 
+            background: var(--dark); color: white; padding: 15px; 
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
+        }
+
+        /* 5 Button Menu */
+        .admin-menu { 
+            display: flex; overflow-x: auto; background: white; 
+            border-bottom: 1px solid #ddd; white-space: nowrap;
+        }
+        .menu-btn { 
+            flex: 1; padding: 15px; border: none; background: none; 
+            font-weight: 600; cursor: pointer; font-size: 0.85rem;
+            color: #666; border-bottom: 3px solid transparent;
+        }
+        .menu-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .section { display: none; animation: fadeIn 0.3s ease; }
+        .section.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Forms & UI */
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { margin-top: 0; font-size: 1.2rem; border-left: 4px solid var(--gold); padding-left: 10px; }
+        label { display: block; margin: 15px 0 5px; font-size: 0.85rem; font-weight: 600; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 15px; background: var(--dark); color: white; border: none; border-radius: 8px; font-weight: 600; margin-top: 20px; cursor: pointer; }
+        
+        /* Item List View */
+        .item-row { display: flex; align-items: center; gap: 15px; padding: 10px; border-bottom: 1px solid #eee; }
+        .item-row img { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; }
     </style>
 </head>
 <body>
 
-    <nav>
-        <div style="font-weight: 800;">LUXE DASHBOARD</div>
-        <button class="logout-btn" id="logoutBtn">Logout</button>
-    </nav>
+<nav>
+    <div style="letter-spacing: 1px;">LUXE <strong>PANEL</strong></div>
+    <button onclick="logout()" style="background:none; color:white; border:1px solid #555; padding:5px 10px; border-radius:5px;">Logout</button>
+</nav>
 
-    <div class="container">
-        <div class="upload-card">
-            <h2>Add New Watch</h2>
-            <p style="color: #888; font-size: 0.85rem;">The watch will appear instantly on the viewer's site.</p>
-            
-            <label>Model Name</label>
-            <input type="text" id="watchName" placeholder="e.g. Omega Seamaster">
-            
-            <label>Retail Price ($)</label>
-            <input type="number" id="watchPrice" placeholder="5000">
-            
-            <label>Watch Image</label>
-            <input type="file" id="watchImg" accept="image/*">
-            
-            <button class="submit-btn" id="uploadBtn">Publish to Shop</button>
+<div class="admin-menu">
+    <button class="menu-btn active" onclick="showSection('info', this)">Shop Info</button>
+    <button class="menu-btn" onclick="showSection('add', this)">Add Item</button>
+    <button class="menu-btn" onclick="showSection('modify', this)">Modify</button>
+    <button class="menu-btn" onclick="showSection('view', this)">View All</button>
+    <button class="menu-btn" onclick="showSection('orders', this)">Orders</button>
+</div>
+
+<div class="container">
+
+    <div id="info" class="section active">
+        <div class="card">
+            <h2>Business Identity</h2>
+            <label>Shop Name</label>
+            <input type="text" id="shopName" placeholder="e.g. Royal Timeless">
+            <label>Address</label>
+            <textarea id="shopAddress" placeholder="Physical location"></textarea>
+            <label>Contact Number</label>
+            <input type="tel" id="shopContact" placeholder="+1 234 567 890">
+            <button class="btn-main" onclick="saveShopInfo()">Update Shop Details</button>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+    <div id="add" class="section">
+        <div class="card">
+            <h2>Upload New Watch</h2>
+            <label>Watch Model</label>
+            <input type="text" id="watchName" placeholder="Submariner 41mm">
+            <label>Price ($)</label>
+            <input type="number" id="watchPrice" placeholder="12500">
+            <label>Details / Specifications</label>
+            <textarea id="watchDetails" placeholder="Movement, Case Material, Water Resistance..."></textarea>
+            <label>Upload Image</label>
+            <input type="file" id="watchImg" accept="image/*">
+            <button class="btn-main" id="uploadBtn" onclick="publishItem()">Publish to Store</button>
+        </div>
+    </div>
 
-        const firebaseConfig = { apiKey: "AIzaSyBlwCl6J9lV30HsyHYoqo_sIBYUcIcY-as",
-  authDomain: "watchshop-48f6a.firebaseapp.com",
-  projectId: "watchshop-48f6a",
-  storageBucket: "watchshop-48f6a.firebasestorage.app",
-  messagingSenderId: "420233109126",
-  appId: "1:420233109126:web:5ee59da9ebf065ecc6bb07" };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
+    <div id="modify" class="section">
+        <div class="card">
+            <h2>Edit Existing Item</h2>
+            <p>Select an item to edit its details or price.</p>
+            <div id="modifyList">Loading items...</div>
+        </div>
+    </div>
 
-        // Security Check: If not logged in, kick back to login page
-        onAuthStateChanged(auth, (user) => {
-            if (!user) window.location.href = "index.html";
+    <div id="view" class="section">
+        <div class="card">
+            <h2>Live Inventory</h2>
+            <div id="inventoryList"></div>
+        </div>
+    </div>
+
+    <div id="orders" class="section">
+        <div class="card">
+            <h2>Customer Orders</h2>
+            <p>New orders will appear here in real-time.</p>
+            <div id="orderList">No orders yet.</div>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, addDoc, collection, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+
+    const firebaseConfig = { /* PASTE YOUR CONFIG HERE */ };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    // --- Tab Switching Logic ---
+    window.showSection = (id, btn) => {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+    };
+
+    // --- Authentication ---
+    onAuthStateChanged(auth, (user) => { if (!user) window.location.href = "index.html"; });
+    window.logout = () => signOut(auth);
+
+    // --- Save Shop Info ---
+    window.saveShopInfo = async () => {
+        await setDoc(doc(db, "settings", "shopInfo"), {
+            name: document.getElementById('shopName').value,
+            address: document.getElementById('shopAddress').value,
+            contact: document.getElementById('shopContact').value
         });
+        alert("Shop Info Saved!");
+    };
 
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            signOut(auth).then(() => window.location.href = "index.html");
+    // --- Publish Watch ---
+    window.publishItem = async () => {
+        const btn = document.getElementById('uploadBtn');
+        const file = document.getElementById('watchImg').files[0];
+        if(!file) return alert("Please select an image");
+
+        btn.innerText = "Uploading...";
+        const imgRef = ref(storage, `watches/${Date.now()}_${file.name}`);
+        await uploadBytes(imgRef, file);
+        const url = await getDownloadURL(imgRef);
+
+        await addDoc(collection(db, "products"), {
+            name: document.getElementById('watchName').value,
+            price: document.getElementById('watchPrice').value,
+            details: document.getElementById('watchDetails').value,
+            imageUrl: url,
+            timestamp: new Date()
         });
+        alert("Watch added successfully!");
+        location.reload();
+    };
 
-        document.getElementById('uploadBtn').addEventListener('click', async () => {
-            const name = document.getElementById('watchName').value;
-            const price = document.getElementById('watchPrice').value;
-            const file = document.getElementById('watchImg').files[0];
-            const btn = document.getElementById('uploadBtn');
-
-            if(!name || !price || !file) return alert("Please complete all fields.");
-
-            btn.innerText = "Processing...";
-            btn.disabled = true;
-
-            try {
-                // 1. Upload to Storage
-                const storageRef = ref(storage, `watches/${Date.now()}_${file.name}`);
-                await uploadBytes(storageRef, file);
-                const url = await getDownloadURL(storageRef);
-
-                // 2. Save to Firestore
-                await addDoc(collection(db, "products"), {
-                    name, price, imageUrl: url, createdAt: new Date()
-                });
-
-                alert("Success! The watch is now live.");
-                location.reload();
-            } catch (e) {
-                alert("Error: " + e.message);
-                btn.disabled = false;
-                btn.innerText = "Publish to Shop";
-            }
+    // --- Real-time Inventory List ---
+    onSnapshot(collection(db, "products"), (snapshot) => {
+        const inv = document.getElementById('inventoryList');
+        const mod = document.getElementById('modifyList');
+        inv.innerHTML = ""; mod.innerHTML = "";
+        
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            const row = `<div class="item-row"><img src="${d.imageUrl}"> <div><strong>${d.name}</strong><br>$${d.price}</div></div>`;
+            inv.innerHTML += row;
+            mod.innerHTML += row + `<button style="font-size:0.7rem;">Edit</button>`;
         });
-    </script>
+    });
+
+</script>
 </body>
 </html>
