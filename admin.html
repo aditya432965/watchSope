@@ -7,43 +7,37 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root { --gold: #d4af37; --dark: #1a1a1a; --gray: #f8f9fa; }
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--gray); color: var(--dark); }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--gray); color: var(--dark); overflow-x: hidden; }
         
-        /* Navigation Sidebar/Top */
-        nav { 
-            background: var(--dark); color: white; padding: 15px; 
-            display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 1000;
-        }
+        nav { background: var(--dark); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
 
-        /* 5 Button Menu */
-        .admin-menu { 
-            display: flex; overflow-x: auto; background: white; 
-            border-bottom: 1px solid #ddd; white-space: nowrap;
-        }
-        .menu-btn { 
-            flex: 1; padding: 15px; border: none; background: none; 
-            font-weight: 600; cursor: pointer; font-size: 0.85rem;
-            color: #666; border-bottom: 3px solid transparent;
-        }
+        .admin-menu { display: flex; overflow-x: auto; background: white; border-bottom: 1px solid #ddd; white-space: nowrap; position: sticky; top: 55px; z-index: 999; }
+        .menu-btn { flex: 1; padding: 15px; border: none; background: none; font-weight: 600; cursor: pointer; font-size: 0.85rem; color: #666; border-bottom: 3px solid transparent; min-width: 100px; }
         .menu-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
 
-        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
         .section { display: none; animation: fadeIn 0.3s ease; }
         .section.active { display: block; }
-
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Forms & UI */
         .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        h2 { margin-top: 0; font-size: 1.2rem; border-left: 4px solid var(--gold); padding-left: 10px; }
+        h2 { margin-top: 0; font-size: 1.2rem; border-left: 4px solid var(--gold); padding-left: 10px; margin-bottom: 20px; }
         label { display: block; margin: 15px 0 5px; font-size: 0.85rem; font-weight: 600; }
-        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         .btn-main { width: 100%; padding: 15px; background: var(--dark); color: white; border: none; border-radius: 8px; font-weight: 600; margin-top: 20px; cursor: pointer; }
-        
-        /* Item List View */
-        .item-row { display: flex; align-items: center; gap: 15px; padding: 10px; border-bottom: 1px solid #eee; }
-        .item-row img { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; }
+
+        /* View All - Perfect Manner Layout */
+        .view-row { display: flex; align-items: center; background: white; margin-bottom: 15px; border-radius: 12px; overflow: hidden; border: 1px solid #eee; padding: 10px; }
+        .view-row img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; margin-right: 20px; }
+        .view-details { flex: 1; }
+        .view-details h3 { margin: 0; color: var(--dark); }
+        .view-details p { font-size: 0.85rem; color: #666; margin: 5px 0; }
+        .view-price { color: var(--gold); font-weight: 800; font-size: 1.1rem; }
+
+        /* Orders List Styles */
+        .order-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: 0.2s; }
+        .order-item:hover { background: #fdfaf0; }
+        .order-details-box { display: none; background: #fafafa; border: 1px dashed var(--gold); padding: 15px; border-radius: 10px; margin-top: 10px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -66,12 +60,9 @@
     <div id="info" class="section active">
         <div class="card">
             <h2>Business Identity</h2>
-            <label>Shop Name</label>
-            <input type="text" id="shopName" placeholder="e.g. Royal Timeless">
-            <label>Address</label>
-            <textarea id="shopAddress" placeholder="Physical location"></textarea>
-            <label>Contact Number</label>
-            <input type="tel" id="shopContact" placeholder="+1 234 567 890">
+            <label>Shop Name</label><input type="text" id="shopName">
+            <label>Address</label><textarea id="shopAddress"></textarea>
+            <label>Contact Number</label><input type="tel" id="shopContact">
             <button class="btn-main" onclick="saveShopInfo()">Update Shop Details</button>
         </div>
     </div>
@@ -79,23 +70,30 @@
     <div id="add" class="section">
         <div class="card">
             <h2>Upload New Watch</h2>
-            <label>Watch Model</label>
-            <input type="text" id="watchName" placeholder="Submariner 41mm">
-            <label>Price ($)</label>
-            <input type="number" id="watchPrice" placeholder="12500">
-            <label>Details / Specifications</label>
-            <textarea id="watchDetails" placeholder="Movement, Case Material, Water Resistance..."></textarea>
-            <label>Upload Image</label>
-            <input type="file" id="watchImg" accept="image/*">
+            <label>Watch Name</label><input type="text" id="watchName">
+            <label>Description</label><textarea id="watchDetails"></textarea>
+            <label>Rate ($)</label><input type="number" id="watchPrice">
+            <label>Watch Image</label><input type="file" id="watchImg" accept="image/*">
             <button class="btn-main" id="uploadBtn" onclick="publishItem()">Publish to Store</button>
         </div>
     </div>
 
     <div id="modify" class="section">
         <div class="card">
-            <h2>Edit Existing Item</h2>
-            <p>Select an item to edit its details or price.</p>
-            <div id="modifyList">Loading items...</div>
+            <h2>Search & Modify</h2>
+            <input type="text" id="searchMod" placeholder="Type watch name to search..." oninput="searchWatch()">
+            <div id="modResults" style="margin-top:20px;"></div>
+            
+            <div id="editForm" style="display:none; margin-top:20px; border-top:2px solid var(--gold); padding-top:20px;">
+                <h3>Edit Mode</h3>
+                <input type="hidden" id="editId">
+                <label>Name</label><input type="text" id="editName">
+                <label>Description</label><textarea id="editDesc"></textarea>
+                <label>Rate</label><input type="number" id="editPrice">
+                <p style="font-size:0.7rem; color:gray;">To change image, upload new one below:</p>
+                <input type="file" id="editImg">
+                <button class="btn-main" onclick="updateItem()">Save Changes</button>
+            </div>
         </div>
     </div>
 
@@ -109,8 +107,7 @@
     <div id="orders" class="section">
         <div class="card">
             <h2>Customer Orders</h2>
-            <p>New orders will appear here in real-time.</p>
-            <div id="orderList">No orders yet.</div>
+            <div id="orderList">Loading orders...</div>
         </div>
     </div>
 
@@ -119,16 +116,15 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, addDoc, collection, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, addDoc, updateDoc, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-    const firebaseConfig = { /* PASTE YOUR CONFIG HERE */ };
+    const firebaseConfig = { /* YOUR CONFIG HERE */ };
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const storage = getStorage(app);
 
-    // --- Tab Switching Logic ---
     window.showSection = (id, btn) => {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
@@ -136,55 +132,116 @@
         btn.classList.add('active');
     };
 
-    // --- Authentication ---
-    onAuthStateChanged(auth, (user) => { if (!user) window.location.href = "index.html"; });
+    onAuthStateChanged(auth, (u) => { if(!u) window.location.href="index.html" });
     window.logout = () => signOut(auth);
 
-    // --- Save Shop Info ---
-    window.saveShopInfo = async () => {
-        await setDoc(doc(db, "settings", "shopInfo"), {
-            name: document.getElementById('shopName').value,
-            address: document.getElementById('shopAddress').value,
-            contact: document.getElementById('shopContact').value
-        });
-        alert("Shop Info Saved!");
-    };
-
-    // --- Publish Watch ---
+    // --- Add Item ---
     window.publishItem = async () => {
         const btn = document.getElementById('uploadBtn');
         const file = document.getElementById('watchImg').files[0];
-        if(!file) return alert("Please select an image");
-
+        if(!file) return alert("Select image");
         btn.innerText = "Uploading...";
-        const imgRef = ref(storage, `watches/${Date.now()}_${file.name}`);
+        const imgRef = ref(storage, `watches/${Date.now()}`);
         await uploadBytes(imgRef, file);
         const url = await getDownloadURL(imgRef);
-
         await addDoc(collection(db, "products"), {
             name: document.getElementById('watchName').value,
             price: document.getElementById('watchPrice').value,
             details: document.getElementById('watchDetails').value,
-            imageUrl: url,
-            timestamp: new Date()
+            imageUrl: url, timestamp: new Date()
         });
-        alert("Watch added successfully!");
-        location.reload();
+        alert("Published!"); location.reload();
     };
 
-    // --- Real-time Inventory List ---
-    onSnapshot(collection(db, "products"), (snapshot) => {
+    // --- Search & Modify ---
+    let allProducts = [];
+    onSnapshot(collection(db, "products"), (snap) => {
+        allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
+        renderInventory();
+    });
+
+    window.searchWatch = () => {
+        const term = document.getElementById('searchMod').value.toLowerCase();
+        const results = allProducts.filter(p => p.name.toLowerCase().includes(term));
+        const div = document.getElementById('modResults');
+        div.innerHTML = results.map(p => `
+            <div class="view-row">
+                <img src="${p.imageUrl}">
+                <div class="view-details">
+                    <h3>${p.name}</h3>
+                    <button onclick="openEdit('${p.id}')">Modify This Item</button>
+                </div>
+            </div>
+        `).join('');
+    };
+
+    window.openEdit = (id) => {
+        const p = allProducts.find(x => x.id === id);
+        document.getElementById('editForm').style.display = 'block';
+        document.getElementById('editId').value = p.id;
+        document.getElementById('editName').value = p.name;
+        document.getElementById('editPrice').value = p.price;
+        document.getElementById('editDesc').value = p.details;
+        window.scrollTo(0, document.body.scrollHeight);
+    };
+
+    window.updateItem = async () => {
+        const id = document.getElementById('editId').value;
+        const file = document.getElementById('editImg').files[0];
+        let updateData = {
+            name: document.getElementById('editName').value,
+            price: document.getElementById('editPrice').value,
+            details: document.getElementById('editDesc').value
+        };
+        if(file) {
+            const imgRef = ref(storage, `watches/${id}`);
+            await uploadBytes(imgRef, file);
+            updateData.imageUrl = await getDownloadURL(imgRef);
+        }
+        await updateDoc(doc(db, "products", id), updateData);
+        alert("Updated!"); location.reload();
+    };
+
+    // --- View All (Perfect Manner) ---
+    function renderInventory() {
         const inv = document.getElementById('inventoryList');
-        const mod = document.getElementById('modifyList');
-        inv.innerHTML = ""; mod.innerHTML = "";
-        
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            const row = `<div class="item-row"><img src="${d.imageUrl}"> <div><strong>${d.name}</strong><br>$${d.price}</div></div>`;
-            inv.innerHTML += row;
-            mod.innerHTML += row + `<button style="font-size:0.7rem;">Edit</button>`;
+        inv.innerHTML = allProducts.map(p => `
+            <div class="view-row">
+                <img src="${p.imageUrl}">
+                <div class="view-details">
+                    <h3>${p.name}</h3>
+                    <p>${p.details}</p>
+                    <div class="view-price">$${p.price}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // --- Orders (Data from sell.html collection) ---
+    onSnapshot(collection(db, "orders"), (snap) => {
+        const list = document.getElementById('orderList');
+        list.innerHTML = "";
+        snap.forEach(d => {
+            const o = d.data();
+            const netRate = o.qty * o.rate;
+            list.innerHTML += `
+                <div class="order-item" onclick="toggleOrder('${d.id}')">
+                    <strong>${o.customerName}</strong> | ${o.contact} | ${o.orderDate}
+                    <div id="det-${d.id}" class="order-details-box">
+                        <p><strong>Address:</strong> ${o.address}</p>
+                        <p><strong>Item:</strong> ${o.itemName}</p>
+                        <p><strong>Qty:</strong> ${o.qty} x $${o.rate}</p>
+                        <p style="color:var(--gold); font-weight:bold;">Net Rate: $${netRate}</p>
+                    </div>
+                </div>
+            `;
         });
     });
+
+    window.toggleOrder = (id) => {
+        const el = document.getElementById('det-'+id);
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    };
 
 </script>
 </body>
