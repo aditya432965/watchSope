@@ -1,54 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Panel | Watch Upload</title>
-    <script type="module">
-        // Import Firebase SDKs
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxe Admin | Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #d4af37; --dark: #121212; }
+        body { 
+            margin: 0; padding: 0; font-family: 'Inter', sans-serif; 
+            background: var(--dark); height: 100vh; 
+            display: flex; justify-content: center; align-items: center;
+        }
+        .login-card {
+            width: 90%; max-width: 380px; background: #fff;
+            padding: 40px; border-radius: 20px; text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+        .logo { font-weight: 600; font-size: 1.8rem; letter-spacing: 2px; margin-bottom: 10px; }
+        .logo span { color: var(--gold); }
+        p { color: #666; font-size: 0.9rem; margin-bottom: 30px; }
+        input {
+            width: 100%; padding: 14px; margin: 10px 0;
+            border: 1px solid #ddd; border-radius: 10px; outline: none;
+            box-sizing: border-box; transition: 0.3s;
+        }
+        input:focus { border-color: var(--gold); }
+        .btn {
+            width: 100%; padding: 15px; background: var(--dark);
+            color: white; border: none; border-radius: 10px;
+            font-weight: 600; cursor: pointer; margin-top: 15px;
+        }
+        #error-msg { color: #ff4d4d; font-size: 0.8rem; margin-top: 10px; }
+    </style>
+</head>
+<body>
 
-        // PASTE YOUR FIREBASE CONFIG HERE
+    <div class="login-card">
+        <div class="logo">LUXE<span>ADMIN</span></div>
+        <p>Secure Merchant Access</p>
+        
+        <input type="email" id="email" placeholder="Email Address">
+        <input type="password" id="pass" placeholder="Password">
+        
+        <button class="btn" id="loginBtn">Login to Dashboard</button>
+        <div id="error-msg"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+        // Replace with your actual Firebase Config
         const firebaseConfig = {
-apiKey: "AIzaSyBlwCl6J9lV30HsyHYoqo_sIBYUcIcY-as",
-  authDomain: "watchshop-48f6a.firebaseapp.com",
-  projectId: "watchshop-48f6a",
-  storageBucket: "watchshop-48f6a.firebasestorage.app",
-  messagingSenderId: "420233109126",
-  appId: "1:420233109126:web:5ee59da9ebf065ecc6bb07"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "...",
+            appId: "..."
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
+        const auth = getAuth(app);
 
-        window.uploadWatch = async () => {
-            const file = document.getElementById('watchImage').files[0];
-            const name = document.getElementById('name').value;
-            const price = document.getElementById('price').value;
+        // Redirect if already logged in
+        onAuthStateChanged(auth, (user) => {
+            if (user) window.location.href = "admin.html";
+        });
 
-            // 1. Upload Image to Storage
-            const storageRef = ref(storage, 'watches/' + file.name);
-            await uploadBytes(storageRef, file);
-            const url = await getDownloadURL(storageRef);
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+            const btn = document.getElementById('loginBtn');
 
-            // 2. Save Data to Firestore
-            await addDoc(collection(db, "products"), {
-                name: name,
-                price: price,
-                imageUrl: url,
-                timestamp: new Date()
-            });
-
-            alert("Watch Published to Live Site!");
-        };
+            btn.innerText = "Authenticating...";
+            
+            signInWithEmailAndPassword(auth, email, pass)
+                .then(() => {
+                    // Success! Redirect to admin.html
+                    window.location.href = "admin.html";
+                })
+                .catch((error) => {
+                    document.getElementById('error-msg').innerText = "Access Denied: Invalid Credentials";
+                    btn.innerText = "Login to Dashboard";
+                });
+        });
     </script>
-</head>
-<body>
-    <h2>Merchant Portal</h2>
-    <input type="text" id="name" placeholder="Watch Name">
-    <input type="text" id="price" placeholder="Price">
-    <input type="file" id="watchImage">
-    <button onclick="uploadWatch()">Upload to Store</button>
 </body>
 </html>
