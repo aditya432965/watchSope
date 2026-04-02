@@ -49,7 +49,12 @@
         import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-        const firebaseConfig = { /* SAME CONFIG AS INDEX.HTML */ };
+        const firebaseConfig = { apiKey: "AIzaSyBlwCl6J9lV30HsyHYoqo_sIBYUcIcY-as",
+  authDomain: "watchshop-48f6a.firebaseapp.com",
+  projectId: "watchshop-48f6a",
+  storageBucket: "watchshop-48f6a.firebasestorage.app",
+  messagingSenderId: "420233109126",
+  appId: "1:420233109126:web:5ee59da9ebf065ecc6bb07" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
