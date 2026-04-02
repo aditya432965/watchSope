@@ -178,8 +178,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
-
+    
+    // We are excluding Storage to prevent "Processing" hang-ups
     const firebaseConfig = { 
         apiKey: "AIzaSyBlwCl6J9lV30HsyHYoqo_sIBYUcIcY-as",
         authDomain: "watchshop-48f6a.firebaseapp.com",
@@ -192,13 +192,18 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app);
 
-    // 1. LOAD SHOP INFO ON PAGE LOAD
+    // --- HELPER: CONVERT IMAGE TO BASE64 STRING ---
+    const toBase64 = file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+
     async function loadCurrentShopInfo() {
         const docRef = doc(db, "settings", "shopInfo");
         const docSnap = await getDoc(docRef);
-
         if (docSnap.exists()) {
             const data = docSnap.data();
             document.getElementById('shopName').value = data.name || "";
@@ -208,18 +213,13 @@
     }
     loadCurrentShopInfo();
 
-    // Theme Toggle
     window.toggleTheme = () => {
-        const body = document.body;
-        const current = body.getAttribute('data-theme');
-        const next = current === 'light' ? 'dark' : 'light';
-        body.setAttribute('data-theme', next);
+        const next = document.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        document.body.setAttribute('data-theme', next);
         localStorage.setItem('admin-theme', next);
     };
 
-    if(localStorage.getItem('admin-theme')) {
-        document.body.setAttribute('data-theme', localStorage.getItem('admin-theme'));
-    }
+    if(localStorage.getItem('admin-theme')) document.body.setAttribute('data-theme', localStorage.getItem('admin-theme'));
 
     window.showSection = (id, btn) => {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -231,7 +231,6 @@
     onAuthStateChanged(auth, (u) => { if(!u) window.location.href="index.html" });
     window.logout = () => signOut(auth);
 
-    // 2. SAVE SHOP INFO TO FIREBASE
     window.saveShopInfo = async () => {
         const btn = document.getElementById('saveShopBtn');
         btn.innerText = "Saving...";
@@ -241,29 +240,39 @@
                 address: document.getElementById('shopAddress').value,
                 contact: document.getElementById('shopContact').value
             });
-            alert("Shop Identity Updated in Cloud!");
-        } catch (e) {
-            alert("Error saving: " + e.message);
-        }
+            alert("Shop Identity Updated!");
+        } catch (e) { alert("Error: " + e.message); }
         btn.innerText = "Update Details";
     };
 
-    // Add Item
+    // --- UPDATED PUBLISH ITEM (USES BASE64) ---
     window.publishItem = async () => {
         const btn = document.getElementById('uploadBtn');
         const file = document.getElementById('watchImg').files[0];
-        if(!file) return alert("Select image");
+        
+        if(!file) return alert("Please select an image");
+        
         btn.innerText = "Processing...";
-        const imgRef = ref(storage, `watches/${Date.now()}`);
-        await uploadBytes(imgRef, file);
-        const url = await getDownloadURL(imgRef);
-        await addDoc(collection(db, "products"), {
-            name: document.getElementById('watchName').value,
-            price: document.getElementById('watchPrice').value,
-            details: document.getElementById('watchDetails').value,
-            imageUrl: url, timestamp: new Date()
-        });
-        alert("Added!"); location.reload();
+        btn.disabled = true;
+
+        try {
+            const base64Image = await toBase64(file);
+            
+            await addDoc(collection(db, "products"), {
+                name: document.getElementById('watchName').value,
+                price: document.getElementById('watchPrice').value,
+                details: document.getElementById('watchDetails').value,
+                imageUrl: base64Image, // Image saved as text
+                timestamp: new Date()
+            });
+
+            alert("Added to Store!");
+            location.reload();
+        } catch (e) {
+            alert("Error: " + e.message);
+            btn.innerText = "Publish to Store";
+            btn.disabled = false;
+        }
     };
 
     let allProducts = [];
@@ -300,18 +309,23 @@
     window.updateItem = async () => {
         const id = document.getElementById('editId').value;
         const file = document.getElementById('editImg').files[0];
+        
         let updateData = {
             name: document.getElementById('editName').value,
             price: document.getElementById('editPrice').value,
             details: document.getElementById('editDesc').value
         };
-        if(file) {
-            const imgRef = ref(storage, `watches/${id}`);
-            await uploadBytes(imgRef, file);
-            updateData.imageUrl = await getDownloadURL(imgRef);
+
+        try {
+            if(file) {
+                updateData.imageUrl = await toBase64(file);
+            }
+            await updateDoc(doc(db, "products", id), updateData);
+            alert("Updated!"); 
+            location.reload();
+        } catch(e) {
+            alert("Error: " + e.message);
         }
-        await updateDoc(doc(db, "products", id), updateData);
-        alert("Updated!"); location.reload();
     };
 
     function renderInventory() {
