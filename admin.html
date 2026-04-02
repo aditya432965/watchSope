@@ -95,8 +95,9 @@
         .view-details p { font-size: 0.8rem; opacity: 0.7; margin: 5px 0; }
         .view-price { color: var(--gold); font-weight: 800; }
 
-        .order-item { padding: 15px; border-bottom: 1px solid #ddd; cursor: pointer; }
-        .order-details-box { display: none; background: #88888811; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px dashed var(--gold); }
+        .order-item { padding: 15px; border-bottom: 1px solid #ddd; cursor: pointer; background: var(--card-bg); margin-bottom: 10px; border-radius: 10px; }
+        .order-details-box { display: none; background: rgba(0,0,0,0.03); padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px dashed var(--gold); color: var(--text); }
+        .item-line { font-size: 0.85rem; border-bottom: 1px solid #eee; padding: 5px 0; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body data-theme="light">
@@ -105,7 +106,7 @@
     <div style="letter-spacing: 1px;">LUXE <strong>PANEL</strong></div>
     <div class="nav-right">
         <button class="theme-toggle" onclick="toggleTheme()">DARK/LIGHT</button>
-        <button onclick="logout()" style="background:none; color:white; border:1px solid #555; padding:5px 10px; border-radius:5px; cursor:pointer;">Logout</button>
+        <button id="logoutBtn" style="background:none; color:white; border:1px solid #555; padding:5px 10px; border-radius:5px; cursor:pointer;">Logout</button>
     </div>
 </nav>
 
@@ -168,7 +169,7 @@
     <div id="orders" class="section">
         <div class="card">
             <h2>Customer Orders</h2>
-            <div id="orderList">No orders found.</div>
+            <div id="orderList">Fetching orders...</div>
         </div>
     </div>
 
@@ -177,9 +178,8 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
     
-    // We are excluding Storage to prevent "Processing" hang-ups
     const firebaseConfig = { 
         apiKey: "AIzaSyBlwCl6J9lV30HsyHYoqo_sIBYUcIcY-as",
         authDomain: "watchshop-48f6a.firebaseapp.com",
@@ -193,7 +193,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // --- HELPER: CONVERT IMAGE TO BASE64 STRING ---
+    // Image helper
     const toBase64 = file => new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -201,24 +201,12 @@
         reader.onerror = error => reject(error);
     });
 
-    async function loadCurrentShopInfo() {
-        const docRef = doc(db, "settings", "shopInfo");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            document.getElementById('shopName').value = data.name || "";
-            document.getElementById('shopAddress').value = data.address || "";
-            document.getElementById('shopContact').value = data.contact || "";
-        }
-    }
-    loadCurrentShopInfo();
-
+    // Theme and Section logic
     window.toggleTheme = () => {
         const next = document.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
         document.body.setAttribute('data-theme', next);
         localStorage.setItem('admin-theme', next);
     };
-
     if(localStorage.getItem('admin-theme')) document.body.setAttribute('data-theme', localStorage.getItem('admin-theme'));
 
     window.showSection = (id, btn) => {
@@ -228,8 +216,21 @@
         btn.classList.add('active');
     };
 
+    // Auth
     onAuthStateChanged(auth, (u) => { if(!u) window.location.href="index.html" });
-    window.logout = () => signOut(auth);
+    document.getElementById('logoutBtn').onclick = () => signOut(auth);
+
+    // Shop Info
+    async function loadCurrentShopInfo() {
+        const docSnap = await getDoc(doc(db, "settings", "shopInfo"));
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            document.getElementById('shopName').value = data.name || "";
+            document.getElementById('shopAddress').value = data.address || "";
+            document.getElementById('shopContact').value = data.contact || "";
+        }
+    }
+    loadCurrentShopInfo();
 
     window.saveShopInfo = async () => {
         const btn = document.getElementById('saveShopBtn');
@@ -245,34 +246,24 @@
         btn.innerText = "Update Details";
     };
 
-    // --- UPDATED PUBLISH ITEM (USES BASE64) ---
+    // Inventory Management
     window.publishItem = async () => {
-        const btn = document.getElementById('uploadBtn');
         const file = document.getElementById('watchImg').files[0];
-        
-        if(!file) return alert("Please select an image");
-        
+        if(!file) return alert("Select an image");
+        const btn = document.getElementById('uploadBtn');
         btn.innerText = "Processing...";
-        btn.disabled = true;
-
         try {
             const base64Image = await toBase64(file);
-            
             await addDoc(collection(db, "products"), {
                 name: document.getElementById('watchName').value,
                 price: document.getElementById('watchPrice').value,
                 details: document.getElementById('watchDetails').value,
-                imageUrl: base64Image, // Image saved as text
+                imageUrl: base64Image,
                 timestamp: new Date()
             });
-
-            alert("Added to Store!");
+            alert("Added!");
             location.reload();
-        } catch (e) {
-            alert("Error: " + e.message);
-            btn.innerText = "Publish to Store";
-            btn.disabled = false;
-        }
+        } catch (e) { alert(e.message); btn.innerText = "Publish"; }
     };
 
     let allProducts = [];
@@ -281,11 +272,77 @@
         renderInventory();
     });
 
+    function renderInventory() {
+        document.getElementById('inventoryList').innerHTML = allProducts.map(p => `
+            <div class="view-row">
+                <img src="${p.imageUrl}">
+                <div class="view-details">
+                    <h3>${p.name}</h3>
+                    <p>${p.details}</p>
+                    <div class="view-price">$${p.price}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // --- REBUILT ORDER FETCHING LOGIC ---
+    onSnapshot(query(collection(db, "orders"), orderBy("date", "desc")), (snap) => {
+        const list = document.getElementById('orderList');
+        if (snap.empty) {
+            list.innerHTML = "No orders found.";
+            return;
+        }
+        list.innerHTML = "";
+        snap.forEach(d => {
+            const o = d.data();
+            
+            // Generate items HTML based on the array sent from order.html
+            let itemsHtml = '';
+            if (o.items && Array.isArray(o.items)) {
+                itemsHtml = o.items.map(item => `
+                    <div class="item-line">
+                        <span>${item.name} (x${item.qty})</span>
+                        <span>$${item.price * item.qty}</span>
+                    </div>
+                `).join('');
+            } else {
+                itemsHtml = '<p>No items found in this order data.</p>';
+            }
+
+            list.innerHTML += `
+                <div class="order-item" onclick="toggleOrder('${d.id}')">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>${o.customerName || 'Guest'}</strong>
+                        <span style="font-size:0.8rem; opacity:0.6;">${o.date}</span>
+                    </div>
+                    <div style="font-size:0.85rem; color:var(--gold); margin-top:5px;">
+                        Phone: ${o.customerPhone || 'N/A'} | Total: $${o.totalAmount || 0}
+                    </div>
+                    <div id="det-${d.id}" class="order-details-box">
+                        <p><strong>Address:</strong> ${o.address || 'Manual Entry'}</p>
+                        <p><strong>Order Status:</strong> ${o.status || 'Pending'}</p>
+                        <hr style="opacity:0.1;">
+                        <div style="margin-top:10px;">
+                            ${itemsHtml}
+                        </div>
+                        <div style="text-align:right; margin-top:10px; font-weight:bold; color:var(--gold);">
+                            Net Total: $${o.totalAmount || 0}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    });
+
+    window.toggleOrder = (id) => {
+        const el = document.getElementById('det-'+id);
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    };
+
     window.searchWatch = () => {
         const term = document.getElementById('searchMod').value.toLowerCase();
         const results = allProducts.filter(p => p.name.toLowerCase().includes(term));
-        const div = document.getElementById('modResults');
-        div.innerHTML = results.map(p => `
+        document.getElementById('modResults').innerHTML = results.map(p => `
             <div class="view-row">
                 <img src="${p.imageUrl}">
                 <div class="view-details">
@@ -303,69 +360,22 @@
         document.getElementById('editName').value = p.name;
         document.getElementById('editPrice').value = p.price;
         document.getElementById('editDesc').value = p.details;
-        window.scrollTo(0, document.body.scrollHeight);
     };
 
     window.updateItem = async () => {
         const id = document.getElementById('editId').value;
         const file = document.getElementById('editImg').files[0];
-        
         let updateData = {
             name: document.getElementById('editName').value,
             price: document.getElementById('editPrice').value,
             details: document.getElementById('editDesc').value
         };
-
-        try {
-            if(file) {
-                updateData.imageUrl = await toBase64(file);
-            }
-            await updateDoc(doc(db, "products", id), updateData);
-            alert("Updated!"); 
-            location.reload();
-        } catch(e) {
-            alert("Error: " + e.message);
-        }
+        if(file) updateData.imageUrl = await toBase64(file);
+        await updateDoc(doc(db, "products", id), updateData);
+        alert("Updated!"); 
+        location.reload();
     };
 
-    function renderInventory() {
-        const inv = document.getElementById('inventoryList');
-        inv.innerHTML = allProducts.map(p => `
-            <div class="view-row">
-                <img src="${p.imageUrl}">
-                <div class="view-details">
-                    <h3>${p.name}</h3>
-                    <p>${p.details}</p>
-                    <div class="view-price">$${p.price}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    onSnapshot(collection(db, "orders"), (snap) => {
-        const list = document.getElementById('orderList');
-        list.innerHTML = "";
-        snap.forEach(d => {
-            const o = d.data();
-            const total = (o.qty || 1) * (o.rate || 0);
-            list.innerHTML += `
-                <div class="order-item" onclick="toggleOrder('${d.id}')">
-                    <strong>${o.customerName || 'N/A'}</strong> | ${o.contact || 'N/A'} | ${o.orderDate || 'No Date'}
-                    <div id="det-${d.id}" class="order-details-box">
-                        <p><strong>Address:</strong> ${o.address || 'N/A'}</p>
-                        <p><strong>Item:</strong> ${o.itemName || 'N/A'}</p>
-                        <p><strong>Qty:</strong> ${o.qty || 1} x $${o.rate || 0}</p>
-                        <p style="color:var(--gold); font-weight:bold;">Net Total: $${total}</p>
-                    </div>
-                </div>
-            `;
-        });
-    });
-
-    window.toggleOrder = (id) => {
-        const el = document.getElementById('det-'+id);
-        el.style.display = el.style.display === 'block' ? 'none' : 'block';
-    };
 </script>
 </body>
 </html>
