@@ -6,45 +6,110 @@
     <title>Luxe Admin | Control Center</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --gold: #d4af37; --dark: #1a1a1a; --gray: #f8f9fa; }
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--gray); color: var(--dark); overflow-x: hidden; }
-        
-        nav { background: var(--dark); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        :root { 
+            --gold: #d4af37; 
+            --dark: #1a1a1a; 
+            --gray: #f8f9fa; 
+            --text: #1a1a1a;
+            --card-bg: #ffffff;
+            --nav-bg: #1a1a1a;
+        }
 
-        .admin-menu { display: flex; overflow-x: auto; background: white; border-bottom: 1px solid #ddd; white-space: nowrap; position: sticky; top: 55px; z-index: 999; }
-        .menu-btn { flex: 1; padding: 15px; border: none; background: none; font-weight: 600; cursor: pointer; font-size: 0.85rem; color: #666; border-bottom: 3px solid transparent; min-width: 100px; }
+        /* Dark Mode Variables */
+        [data-theme="dark"] {
+            --dark: #f8f9fa;
+            --gray: #121212;
+            --text: #f8f9fa;
+            --card-bg: #1e1e1e;
+            --nav-bg: #000000;
+        }
+
+        body { 
+            margin: 0; 
+            font-family: 'Inter', sans-serif; 
+            background: var(--gray); 
+            color: var(--text); 
+            overflow-x: hidden; 
+            transition: background 0.3s, color 0.3s;
+        }
+        
+        nav { 
+            background: var(--nav-bg); 
+            color: white; 
+            padding: 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+        }
+
+        .nav-right { display: flex; gap: 10px; align-items: center; }
+
+        .theme-toggle {
+            background: var(--gold);
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.7rem;
+        }
+
+        .admin-menu { 
+            display: flex; 
+            overflow-x: auto; 
+            background: var(--card-bg); 
+            border-bottom: 1px solid #ddd; 
+            white-space: nowrap; 
+            position: sticky; 
+            top: 55px; 
+            z-index: 999; 
+        }
+
+        .menu-btn { 
+            flex: 1; padding: 15px; border: none; background: none; 
+            font-weight: 600; cursor: pointer; font-size: 0.85rem; 
+            color: #888; border-bottom: 3px solid transparent; min-width: 100px; 
+        }
+
         .menu-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
 
         .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
         .section { display: none; animation: fadeIn 0.3s ease; }
         .section.active { display: block; }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card { background: var(--card-bg); padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
         h2 { margin-top: 0; font-size: 1.2rem; border-left: 4px solid var(--gold); padding-left: 10px; margin-bottom: 20px; }
         label { display: block; margin: 15px 0 5px; font-size: 0.85rem; font-weight: 600; }
-        input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 15px; background: var(--dark); color: white; border: none; border-radius: 8px; font-weight: 600; margin-top: 20px; cursor: pointer; }
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; background: transparent; color: inherit; }
+        
+        .btn-main { width: 100%; padding: 15px; background: var(--gold); color: black; border: none; border-radius: 8px; font-weight: 600; margin-top: 20px; cursor: pointer; }
 
-        /* View All - Perfect Manner Layout */
-        .view-row { display: flex; align-items: center; background: white; margin-bottom: 15px; border-radius: 12px; overflow: hidden; border: 1px solid #eee; padding: 10px; }
-        .view-row img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; margin-right: 20px; }
+        /* View All Layout */
+        .view-row { display: flex; align-items: center; background: var(--card-bg); margin-bottom: 15px; border-radius: 12px; overflow: hidden; border: 1px solid #44444433; padding: 10px; }
+        .view-row img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; margin-right: 20px; }
         .view-details { flex: 1; }
-        .view-details h3 { margin: 0; color: var(--dark); }
-        .view-details p { font-size: 0.85rem; color: #666; margin: 5px 0; }
-        .view-price { color: var(--gold); font-weight: 800; font-size: 1.1rem; }
+        .view-details h3 { margin: 0; font-size: 1rem; }
+        .view-details p { font-size: 0.8rem; opacity: 0.7; margin: 5px 0; }
+        .view-price { color: var(--gold); font-weight: 800; }
 
-        /* Orders List Styles */
-        .order-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: 0.2s; }
-        .order-item:hover { background: #fdfaf0; }
-        .order-details-box { display: none; background: #fafafa; border: 1px dashed var(--gold); padding: 15px; border-radius: 10px; margin-top: 10px; font-size: 0.9rem; }
+        /* Orders Styles */
+        .order-item { padding: 15px; border-bottom: 1px solid #ddd; cursor: pointer; }
+        .order-details-box { display: none; background: #88888811; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px dashed var(--gold); }
     </style>
 </head>
-<body>
+<body data-theme="light">
 
 <nav>
     <div style="letter-spacing: 1px;">LUXE <strong>PANEL</strong></div>
-    <button onclick="logout()" style="background:none; color:white; border:1px solid #555; padding:5px 10px; border-radius:5px;">Logout</button>
+    <div class="nav-right">
+        <button class="theme-toggle" onclick="toggleTheme()">DARK/LIGHT</button>
+        <button onclick="logout()" style="background:none; color:white; border:1px solid #555; padding:5px 10px; border-radius:5px; cursor:pointer;">Logout</button>
+    </div>
 </nav>
 
 <div class="admin-menu">
@@ -63,7 +128,7 @@
             <label>Shop Name</label><input type="text" id="shopName">
             <label>Address</label><textarea id="shopAddress"></textarea>
             <label>Contact Number</label><input type="tel" id="shopContact">
-            <button class="btn-main" onclick="saveShopInfo()">Update Shop Details</button>
+            <button class="btn-main" onclick="saveShopInfo()">Update Details</button>
         </div>
     </div>
 
@@ -81,7 +146,7 @@
     <div id="modify" class="section">
         <div class="card">
             <h2>Search & Modify</h2>
-            <input type="text" id="searchMod" placeholder="Type watch name to search..." oninput="searchWatch()">
+            <input type="text" id="searchMod" placeholder="Search watch name..." oninput="searchWatch()">
             <div id="modResults" style="margin-top:20px;"></div>
             
             <div id="editForm" style="display:none; margin-top:20px; border-top:2px solid var(--gold); padding-top:20px;">
@@ -90,8 +155,7 @@
                 <label>Name</label><input type="text" id="editName">
                 <label>Description</label><textarea id="editDesc"></textarea>
                 <label>Rate</label><input type="number" id="editPrice">
-                <p style="font-size:0.7rem; color:gray;">To change image, upload new one below:</p>
-                <input type="file" id="editImg">
+                <label>New Image (Optional)</label><input type="file" id="editImg">
                 <button class="btn-main" onclick="updateItem()">Save Changes</button>
             </div>
         </div>
@@ -107,7 +171,7 @@
     <div id="orders" class="section">
         <div class="card">
             <h2>Customer Orders</h2>
-            <div id="orderList">Loading orders...</div>
+            <div id="orderList">No orders found.</div>
         </div>
     </div>
 
@@ -116,20 +180,36 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, addDoc, updateDoc, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, addDoc, updateDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyBlwCl6J9lV30HsyHYoqo_sIBYUcIcY-as",
-  authDomain: "watchshop-48f6a.firebaseapp.com",
-  projectId: "watchshop-48f6a",
-  storageBucket: "watchshop-48f6a.firebasestorage.app",
-  messagingSenderId: "420233109126",
-  appId: "1:420233109126:web:5ee59da9ebf065ecc6bb07" };
+        authDomain: "watchshop-48f6a.firebaseapp.com",
+        projectId: "watchshop-48f6a",
+        storageBucket: "watchshop-48f6a.firebasestorage.app",
+        messagingSenderId: "420233109126",
+        appId: "1:420233109126:web:5ee59da9ebf065ecc6bb07" 
+    };
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const storage = getStorage(app);
+
+    // Theme Toggle
+    window.toggleTheme = () => {
+        const body = document.body;
+        const current = body.getAttribute('data-theme');
+        const next = current === 'light' ? 'dark' : 'light';
+        body.setAttribute('data-theme', next);
+        localStorage.setItem('admin-theme', next);
+    };
+
+    // Load saved theme
+    if(localStorage.getItem('admin-theme')) {
+        document.body.setAttribute('data-theme', localStorage.getItem('admin-theme'));
+    }
 
     window.showSection = (id, btn) => {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -141,12 +221,22 @@
     onAuthStateChanged(auth, (u) => { if(!u) window.location.href="index.html" });
     window.logout = () => signOut(auth);
 
-    // --- Add Item ---
+    // Save Shop Info
+    window.saveShopInfo = async () => {
+        await setDoc(doc(db, "settings", "shopInfo"), {
+            name: document.getElementById('shopName').value,
+            address: document.getElementById('shopAddress').value,
+            contact: document.getElementById('shopContact').value
+        });
+        alert("Shop Identity Updated!");
+    };
+
+    // Add Item
     window.publishItem = async () => {
         const btn = document.getElementById('uploadBtn');
         const file = document.getElementById('watchImg').files[0];
         if(!file) return alert("Select image");
-        btn.innerText = "Uploading...";
+        btn.innerText = "Processing...";
         const imgRef = ref(storage, `watches/${Date.now()}`);
         await uploadBytes(imgRef, file);
         const url = await getDownloadURL(imgRef);
@@ -156,10 +246,9 @@
             details: document.getElementById('watchDetails').value,
             imageUrl: url, timestamp: new Date()
         });
-        alert("Published!"); location.reload();
+        alert("Added!"); location.reload();
     };
 
-    // --- Search & Modify ---
     let allProducts = [];
     onSnapshot(collection(db, "products"), (snap) => {
         allProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -175,7 +264,7 @@
                 <img src="${p.imageUrl}">
                 <div class="view-details">
                     <h3>${p.name}</h3>
-                    <button onclick="openEdit('${p.id}')">Modify This Item</button>
+                    <button class="btn-main" style="margin-top:5px; padding:5px;" onclick="openEdit('${p.id}')">Modify</button>
                 </div>
             </div>
         `).join('');
@@ -208,7 +297,6 @@
         alert("Updated!"); location.reload();
     };
 
-    // --- View All (Perfect Manner) ---
     function renderInventory() {
         const inv = document.getElementById('inventoryList');
         inv.innerHTML = allProducts.map(p => `
@@ -223,21 +311,21 @@
         `).join('');
     }
 
-    // --- Orders (Data from sell.html collection) ---
+    // Orders Listener
     onSnapshot(collection(db, "orders"), (snap) => {
         const list = document.getElementById('orderList');
         list.innerHTML = "";
         snap.forEach(d => {
             const o = d.data();
-            const netRate = o.qty * o.rate;
+            const total = (o.qty || 1) * (o.rate || 0);
             list.innerHTML += `
                 <div class="order-item" onclick="toggleOrder('${d.id}')">
-                    <strong>${o.customerName}</strong> | ${o.contact} | ${o.orderDate}
+                    <strong>${o.customerName || 'N/A'}</strong> | ${o.contact || 'N/A'} | ${o.orderDate || 'No Date'}
                     <div id="det-${d.id}" class="order-details-box">
-                        <p><strong>Address:</strong> ${o.address}</p>
-                        <p><strong>Item:</strong> ${o.itemName}</p>
-                        <p><strong>Qty:</strong> ${o.qty} x $${o.rate}</p>
-                        <p style="color:var(--gold); font-weight:bold;">Net Rate: $${netRate}</p>
+                        <p><strong>Address:</strong> ${o.address || 'N/A'}</p>
+                        <p><strong>Item:</strong> ${o.itemName || 'N/A'}</p>
+                        <p><strong>Qty:</strong> ${o.qty || 1} x $${o.rate || 0}</p>
+                        <p style="color:var(--gold); font-weight:bold;">Net Total: $${total}</p>
                     </div>
                 </div>
             `;
@@ -248,7 +336,6 @@
         const el = document.getElementById('det-'+id);
         el.style.display = el.style.display === 'block' ? 'none' : 'block';
     };
-
 </script>
 </body>
 </html>
